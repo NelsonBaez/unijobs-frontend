@@ -40,17 +40,17 @@ const LandingPage: React.FC = () => {
           <CategoriesCard
             icon={IoMdCart}
             title="Produtos"
-            link="/categories/products/1"
+            link="/categories/produtos/0"
           />
           <CategoriesCard
             icon={IoMdBuild}
             title="Serviços"
-            link="/categories/services/1"
+            link="/categories/servicos/0"
           />
         </Sider>
 
         <Title>Categorias</Title>
-        <Carousel
+        {/* <Carousel
           infinite
           slidesPerPage={4}
           arrowLeft={<FiChevronLeft size={60} color="#0E346A" />}
@@ -97,7 +97,7 @@ const LandingPage: React.FC = () => {
             title="Outros"
             link="/catalog/1"
           />
-        </Carousel>
+        </Carousel> */}
         <Title>Sobre a UniJobs</Title>
         <Imagem src={aboutUnijobs} alt="Sobre a UniJobs" />
       </Container>
