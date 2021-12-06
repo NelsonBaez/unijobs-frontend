@@ -2,16 +2,23 @@
 export interface IItem {
   id: string;
   title: string;
+  titulo?: string;
+  miniatura?: string;
   description: string;
+  descricao?: string;
+  tipoItem?: string;
   price: string;
+  preco?: number;
   type: string;
   thumbnail_id: number;
   thumbnail_url: string;
   image_id: number;
   image_url: string;
   name: string;
+  anunciante?: string;
   course: string;
   contact: string;
+  contato?: string;
   updatedAt: string;
   createdAt: string;
   user: {
@@ -26,6 +33,11 @@ export interface IItem {
     updated_at: Date;
     avatar: number;
     avatar_url: string;
+  };
+  tipoProduto?: {
+    id_tipo_produto?: string;
+    nome?: string;
+    descricao?: string;
   };
 }
 // Response attributes in the courses
@@ -50,4 +62,11 @@ interface Item {
   name: string;
   course: string;
   contact: string;
+}
+
+export interface ITypes {
+  id: string;
+  id_tipo_servico: string;
+  id_tipo_produto: string;
+  nome: string;
 }

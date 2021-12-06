@@ -12,18 +12,12 @@ import Loading from '../../components/Loading';
 import { IItem } from '../../services/types';
 
 import ScrollToTopOnMount from '../../utils/ScrollToTopOnMount';
-// interface Product {
-//   _id: string;
-//   title: string;
-//   description: string;
-//   price: string;
-//   type: string;
-//   image: string[];
-// }
 
 interface RepositoryParams {
   page: string;
   itemType: string;
+  categorie: string;
+  categorieId: string;
 }
 
 const Catalog: React.FC = () => {
@@ -32,56 +26,36 @@ const Catalog: React.FC = () => {
   const { params } = useRouteMatch<RepositoryParams>();
   const [loading, setLoading] = useState(false);
 
-  const { itemType } = params;
-
-  function splitString(stringToSplit: string, separator: string) {
-    const arrayOfStrings = stringToSplit.split(separator);
-    return arrayOfStrings;
-  }
-
+  const imageNotFound = 'https://imgur.com/sM05PIm';
   useEffect(() => {
     setLoading(true);
-    if (itemType) {
-      const separetedCategorie = splitString(itemType, '/');
-      console.log(`${separetedCategorie[0]}/${params.page}`);
-      if (separetedCategorie.length === 2) {
-        api
-          .get(
-            `/${separetedCategorie[0]}/${separetedCategorie[1]}/${params.page}`,
-          )
-          .then(response => {
-            setProducts(response.data.data);
-          })
-          .catch(e => {
-            console.log(e);
-          });
-        setLoading(false);
-      } else {
-        api
-          .get(`/${separetedCategorie[0]}/${params.page}`)
-          .then(response => {
-            setProducts(response.data.data);
-          })
-          .catch(e => {
-            console.log(e);
-          });
-        setLoading(false);
-      }
-    } else {
+    if (params.categorie) {
       api
-        .get(`/items/${params.page}`)
+        .get(
+          `/${params.categorie}/${params.categorieId}/${params.itemType}?page=${params.page}&size=5`,
+        )
         .then(response => {
-          setProducts(response.data.data);
+          setProducts(response.data);
         })
         .catch(e => {
-          console.log(e);
+          throw e;
+        });
+      setLoading(false);
+    } else {
+      api
+        .get(`/${params.itemType}?page=${params.page}&size=5`)
+        .then(response => {
+          setProducts(response.data.content);
+        })
+        .catch(e => {
+          throw e;
         });
       setLoading(false);
     }
     const nextPage = parseInt(params.page) + 1;
     setNextPage(nextPage.toString());
     setLoading(false);
-  }, [itemType, params.itemType, params.page]);
+  }, [params.itemType, params.page]);
 
   const history = useHistory();
 
@@ -91,24 +65,32 @@ const Catalog: React.FC = () => {
       <Loading loading={loading} />
       <Banner backIcon />
       <Container>
-        {products.map(product => {
-          return (
-            <Content key={product.id}>
-              <Link to={`/item/${product.id}`} key={product.id}>
-                <img
-                  src={`http://200.208.73.149:3333/api/files/${product.thumbnail_id}`}
-                  alt="Produto"
-                />
-                <Informations>
-                  <span>{product.type}</span>
-                  <h1>{product.title}</h1>
-                  <p>{product.description}</p>
-                </Informations>
-                <strong>R$ {product.price}</strong>
-              </Link>
-            </Content>
-          );
-        })}
+        {products &&
+          products.map(product => {
+            return (
+              <Content key={product.id}>
+                <Link
+                  to={`/item/${params.itemType}/${product.id}`}
+                  key={product.id}
+                >
+                  <img
+                    src={
+                      product.miniatura?.includes('http')
+                        ? product.miniatura
+                        : imageNotFound
+                    }
+                    alt="Produto"
+                  />
+                  <Informations>
+                    <span>{product.type}</span>
+                    <h1>{product.titulo}</h1>
+                    <p>{product.descricao}</p>
+                  </Informations>
+                  <strong>R$ {product.preco}</strong>
+                </Link>
+              </Content>
+            );
+          })}
       </Container>
       <Pages>
         <button type="button" onClick={history.goBack}>

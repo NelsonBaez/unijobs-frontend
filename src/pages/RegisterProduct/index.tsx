@@ -23,17 +23,38 @@ import Select from '../../components/Select';
 import Sidebar from '../../components/Sidebar';
 import Button from '../../components/Button';
 import Loading from '../../components/Loading';
+import { useEffect } from 'react';
+import product from '../../services/product';
+import { useAuth } from '../../hooks/auth';
+import fileApi from '../../services/fileApi';
+import applicationContext from '../../config/ApplicationContext';
+import { isAdmin } from '../../utils/utils';
 
 interface ItemProps {
-  title: string;
-  description: string;
-  item_type: string;
-  item_category: string;
-  price: number;
-  thumbnail_id: number;
-  thumbnail_url: string;
-  image_id: number;
-  image_url: string;
+  // title: string;
+  titulo?: string;
+  miniatura?: string;
+  descricao?: string;
+  preco?: number;
+  prazo?: number;
+  id_tipo_produto: number;
+  // description: string;
+  // item_type: string;
+  // item_category: string;
+  // price: number;
+  // thumbnail_id: number;
+  // thumbnail_url: string;
+  // image_id: number;
+  // image_url: string;
+}
+
+interface TypeProductProps {
+  value: number;
+  label: string;
+}
+
+interface FreeImageItem {
+  image: { url: string };
 }
 
 const RegisterProduct: React.FC = () => {
@@ -42,60 +63,53 @@ const RegisterProduct: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
   const [currency, setCurrency] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [img1, setImg1] = useState<File>({} as File);
-  const [img2, setImg2] = useState<File>({} as File);
+  const [img1, setImg1] = useState<File>();
+  // const [img2, setImg2] = useState<File>({} as File);
   const [isFocused, setIsFocused] = useState(false);
   const [isFilled, setIsFilled] = useState(false);
+  const ctx = useAuth();
 
-  const handleCreateProduct = useCallback(
-    async (data: ItemProps) => {
-      console.log(data);
+  const handleCreateProduct = async (data: ItemProps) => {
+    const formData = new FormData();
+    formData.append('miniatura', img1 as File, img1?.name);
 
-      const imagem1 = new FormData();
-      imagem1.append('file', img1);
-      const apiImg1 = await api.post('/files', imagem1);
+    const item = {
+      titulo: data.titulo,
+      descricao: data.descricao,
+      id_tipo_produto: data.id_tipo_produto,
+      preco: data.preco,
+      prazo: data.prazo,
+      id_usuario: ctx.user?.id,
+    };
 
-      const imagem2 = new FormData();
-      imagem2.append('file', img2);
-      const apiImg2 = await api.post('/files', imagem2);
+    Object.keys(item).forEach(key => {
+      //@ts-ignore
+      formData.append(key, item[key]);
+    });
 
-      const item = {
-        title: data.title,
-        description: data.description,
-        item_type: data.item_type,
-        item_category: data.item_category,
-        price: data.price,
-        thumbnail_id: apiImg1.data.id,
-        thumbnail_url: apiImg1.data.url,
-        image_id: apiImg2.data.id,
-        image_url: apiImg2.data.url,
-      };
+    if (!item) {
+      setLoading(true);
+    }
 
-      if (!item) {
-        setLoading(true);
-      }
+    await api.request({
+      url: '/produtos',
+      method: 'POST',
+      data: formData,
+    });
 
-      await api.post('/items', item);
-      setLoading(false);
-      history.push('/');
-      addToast({
-        title: 'Produto criado',
-        description: 'Seu produto foi criado com sucesso!',
-        type: 'sucess',
-      });
-    },
-    [addToast, history, img1, img2],
-  );
+    setLoading(false);
+    history.push('/');
+
+    addToast({
+      title: 'Produto criado',
+      description: 'Seu produto foi criado com sucesso!',
+      type: 'sucess',
+    });
+  };
 
   const handleImage1 = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       setImg1(event.target.files[0]);
-    }
-  }, []);
-
-  const handleImage2 = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      setImg2(event.target.files[0]);
     }
   }, []);
 
@@ -105,31 +119,27 @@ const RegisterProduct: React.FC = () => {
     return moneyFormated;
   }, []);
 
-  const handleSubmit = useCallback(
-    async (data: ItemProps) => {
-      setLoading(true);
-      data.price = await handleCurrencyMoney(currency);
-      try {
-        const schema = Yup.object().shape({
-          title: Yup.string().required(),
-          description: Yup.string().required(),
-          price: Yup.number().required(),
-          item_type: Yup.string().required(),
-          item_category: Yup.string().required(),
-        });
+  const handleSubmit = async (data: ItemProps) => {
+    data.preco = await handleCurrencyMoney(currency);
+    try {
+      const schema = Yup.object().shape({
+        titulo: Yup.string().required(),
+        descricao: Yup.string().required(),
+        preco: Yup.string().required(),
+        prazo: Yup.string().required(),
+        id_tipo_produto: Yup.string().required(),
+        miniatura: Yup.string().required(),
+      });
 
-        await schema.validate(data, {
-          abortEarly: false,
-        });
+      await schema.validate(data, {
+        abortEarly: false,
+      });
 
-        handleCreateProduct(data);
-      } catch (err) {
-        setLoading(false);
-        console.log(err);
-      }
-    },
-    [handleCreateProduct, handleCurrencyMoney, currency],
-  );
+      handleCreateProduct(data);
+    } catch (err) {
+      throw err;
+    }
+  };
 
   const handleInputFocus = useCallback(() => {
     setIsFocused(true);
@@ -138,6 +148,22 @@ const RegisterProduct: React.FC = () => {
   const handleInputBlur = useCallback(() => {
     setIsFocused(false);
     setIsFilled(true);
+  }, []);
+
+  const [productTypes, setProductsTypes] = useState<TypeProductProps[]>([]);
+  useEffect(() => {
+    api
+      .get('/tipos_produtos')
+      .then(response => {
+        const arrayLabelNome = response.data.map((item: any) => ({
+          value: item.id_tipo_produto,
+          label: item.nome,
+        }));
+        setProductsTypes(arrayLabelNome);
+      })
+      .catch(error => {
+        throw error;
+      });
   }, []);
 
   return (
@@ -152,56 +178,36 @@ const RegisterProduct: React.FC = () => {
             <Title>Adicionar Produto</Title>
             <Formbox>
               <Form onSubmit={handleSubmit} ref={formRef}>
-                <Input name="title" placeholder="Titulo" type="text" />
-                <Input name="description" placeholder="Descrição" type="text" />
-                {/* <Input name="price" type="number" placeholder="Preço" /> */}
+                <Input name="titulo" placeholder="Titulo" type="text" />
+                <Input name="descricao" placeholder="Descrição" type="text" />
+                <Input
+                  name="prazo"
+                  type="number"
+                  placeholder="Prazo de entrega (Em dias)"
+                />
                 <PrecoArea isFilled={isFilled} isFocused={isFocused}>
                   <span>Preço</span>
                   <CurrencyInput
-                    name="price"
+                    name="preco"
                     prefix="R$"
                     value={currency}
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
                     onChangeEvent={(event: ChangeEvent<HTMLInputElement>) =>
-                      setCurrency(event.target.value)}
+                      setCurrency(event.target.value)
+                    }
                   />
                 </PrecoArea>
                 <Select
-                  name="item_type"
-                  options={[
-                    { value: 'service', label: 'Serviço' },
-                    { value: 'product', label: 'Produto' },
-                  ]}
-                  label="Tipo do item"
-                />
-                <Select
-                  name="item_category"
-                  options={[
-                    { value: 'gastronomia', label: 'Gastronomia' },
-                    { value: 'aula-particular', label: 'Aula Particular' },
-                    { value: 'roupas-e-calcados', label: 'Roupas e calçados' },
-                    { value: 'acessorios', label: 'Acessórios' },
-                    { value: 'artesanato', label: 'Artesanato' },
-                    {
-                      value: 'assistencia-tecnica',
-                      label: 'Assitencia técnica',
-                    },
-                    { value: 'outros', label: 'Outros' },
-                  ]}
+                  name="id_tipo_produto"
+                  options={productTypes}
                   label="Categoria do item"
                 />
                 <Input
-                  name="thumbnail"
+                  name="miniatura"
                   type="file"
-                  onChange={handleImage1}
                   label="Thumbnail"
-                />
-                <Input
-                  name="image"
-                  type="file"
-                  onChange={handleImage2}
-                  label="Imagem destaque"
+                  onChange={handleImage1}
                 />
                 <Buttons>
                   <Button type="submit">Salvar</Button>

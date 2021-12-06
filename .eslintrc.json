@@ -5,7 +5,6 @@
     },
     "extends": [
         "plugin:react/recommended",
-        "airbnb",
         "plugin:@typescript-eslint/recommended",
         "prettier/@typescript-eslint",
         "plugin:prettier/recommended"
@@ -24,6 +23,7 @@
     },
     "plugins": [
         "react",
+        "import",
         "@typescript-eslint",
         "react-hooks",
         "prettier"
@@ -36,12 +36,20 @@
       "react/jsx-props-no-spreading":"off",
       "react/prop-types": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
+
+      //biblioteca adicionada
+      "@typescript-eslint/no-extraneous-class": "off",
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "off",
       "react/jsx-filename-extension": [1, { "extensions": [".tsx"] }],
       "import/prefer-default-export": "off",
       "react/jsx-one-expression-per-line": "off",
-      "prettier/prettier": "error",
+      "prettier/prettier": [
+        "error",
+        {
+          "endOfLine": "auto"
+        }
+      ],
       "treatUndefinedAsUnspecified": "off",
       "consistent-return": "off",
       "no-unused-expressions":"off",

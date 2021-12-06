@@ -7,7 +7,6 @@ import { Header } from './styles';
 import logo from '../../assets/logo.svg';
 import { useAuth } from '../../hooks/auth';
 
-
 interface BannerProps {
   backIcon: boolean;
 }
@@ -44,15 +43,15 @@ const Banner: React.FC<BannerProps> = ({ backIcon }) => {
       </div> */}
       {isLogged ? (
         <div className="menu">
-          <a href="/register">Anunciar</a>
+          <Link to="/register">Anunciar</Link>
           <Link to="/login" onClick={handleClick}>
             Sair
           </Link>
         </div>
       ) : (
         <div className="menu">
-          <a href="/register">Anunciar</a>
-          <a href="/login">Login</a>
+          <Link to="/register">Anunciar</Link>
+          <Link to="/login">Login</Link>
         </div>
       )}
     </Header>
